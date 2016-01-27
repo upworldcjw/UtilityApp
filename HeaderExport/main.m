@@ -7,7 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-
+NSString* runCommand(NSString *commandToRun);
 NSString* runScript(NSString* scriptName);
 NSString* writeDir();
 
@@ -20,14 +20,14 @@ int main(int argc, const char * argv[]) {
 //        }
 //        system("find . -iname *.h >> PPUtilities.h");
         
-        NSString *result = runScript(@"find . -iname *.h");// >> PPUtilities.h
-        NSArray *lines = [result componentsSeparatedByString:@"/n"];
+        NSString *result = runCommand(@"find . -name \"*.h\"");// >> PPUtilities.h
+        NSArray *lines = [result componentsSeparatedByString:@"\n"];
         NSMutableString *mutStr = [NSMutableString string];
         for (NSString *line in lines) {
             NSArray *items = [line componentsSeparatedByString:@"/"];
             if ([items count]) {
                 NSString *headName = [items lastObject];
-                [mutStr stringByAppendingFormat:@"#import \"%@.h\"\n",headName];
+                [mutStr appendFormat:@"#import \"%@\"\n",headName];
             }
         }
         [mutStr writeToFile:[writeDir() stringByAppendingPathComponent:@"PPUtilities.h"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
@@ -48,31 +48,57 @@ NSString* writeDir(){
     return homeDir;
 }
 
-NSString* runScript(NSString* scriptName){
-    NSTask *task;
-    task = [[NSTask alloc] init];
-    [task setLaunchPath: @"/bin/sh"];
+
+NSString* runCommand(NSString *commandToRun)
+{
+    NSTask *task = [[NSTask alloc] init];
+    [task setLaunchPath:@"/bin/sh"];
     
-    NSArray *arguments;
-    NSString* newpath = [NSString stringWithFormat:@"%@/%@",writeDir(), scriptName];
-    NSLog(@"shell script path: %@",newpath);
-    arguments = [NSArray arrayWithObjects:newpath, nil];
-    [task setArguments: arguments];
+    NSArray *arguments = [NSArray arrayWithObjects:
+                          @"-c" ,
+                          [NSString stringWithFormat:@"%@", commandToRun],
+                          nil];
+    NSLog(@"run command:%@", commandToRun);
+    [task setArguments:arguments];
     
-    NSPipe *pipe;
-    pipe = [NSPipe pipe];
-    [task setStandardOutput: pipe];
+    NSPipe *pipe = [NSPipe pipe];
+    [task setStandardOutput:pipe];
     
-    NSFileHandle *file;
-    file = [pipe fileHandleForReading];
+    NSFileHandle *file = [pipe fileHandleForReading];
     
     [task launch];
     
-    NSData *data;
-    data = [file readDataToEndOfFile];
+    NSData *data = [file readDataToEndOfFile];
     
-    NSString *string;
-    string = [[NSString alloc] initWithData: data encoding: NSUTF8StringEncoding];
-//    NSLog (@"script returned:\n%@", string);
-    return string;
+    NSString *output = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    return output;
 }
+
+//NSString* runScript(NSString* scriptName){
+//    NSTask *task;
+//    task = [[NSTask alloc] init];
+//    [task setLaunchPath: @"/bin/sh"];
+//    
+//    NSArray *arguments;
+//    NSString* newpath = [NSString stringWithFormat:@"%@/%@",writeDir(), scriptName];
+//    NSLog(@"shell script path: %@",newpath);
+//    arguments = [NSArray arrayWithObjects:newpath, nil];
+//    [task setArguments: arguments];
+//    
+//    NSPipe *pipe;
+//    pipe = [NSPipe pipe];
+//    [task setStandardOutput: pipe];
+//    
+//    NSFileHandle *file;
+//    file = [pipe fileHandleForReading];
+//    
+//    [task launch];
+//    
+//    NSData *data;
+//    data = [file readDataToEndOfFile];
+//    
+//    NSString *string;
+//    string = [[NSString alloc] initWithData: data encoding: NSUTF8StringEncoding];
+////    NSLog (@"script returned:\n%@", string);
+//    return string;
+//}
