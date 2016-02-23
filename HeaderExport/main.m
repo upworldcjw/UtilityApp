@@ -10,34 +10,51 @@
 NSString* runCommand(NSString *commandToRun);
 NSString* runScript(NSString* scriptName);
 NSString* writeDir();
+void excuteShell();
 
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
-        // insert code here...
-//        NSLog(@"Hello, World!");
-//        if (argc != 2) {
-//            NSLog(@"params invaild error");
-//        }
-//        system("find . -iname *.h >> PPUtilities.h");
-        
-        NSString *result = runCommand(@"find . -name \"*.h\"");// >> PPUtilities.h
-        NSArray *lines = [result componentsSeparatedByString:@"\n"];
-        NSMutableString *mutStr = [NSMutableString string];
-        for (NSString *line in lines) {
-            NSArray *items = [line componentsSeparatedByString:@"/"];
-            if ([items count]) {
-                NSString *headName = [items lastObject];
-                [mutStr appendFormat:@"#import \"%@\"\n",headName];
-            }
-        }
-        [mutStr writeToFile:[writeDir() stringByAppendingPathComponent:@"PPUtilities.h"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
-        
-        
+//        excuteShell();
+//        findAllHederFile();
 
     }
     return 0;
 }
 
+
+#pragma mark - 打开终端显示执行shell结果
+void excuteShell(){
+    NSString *homeDir = [[NSBundle mainBundle] bundlePath];
+    NSLog(@"bundlePath dir %@",homeDir);
+    ///system 中cd 不能改变当前目录，需要用chdir
+    chdir([homeDir UTF8String]);
+    system("echo ${PWD}");
+    
+    NSString *pwd = [NSString stringWithFormat:@"%@/update_repo.sh",homeDir];
+    if (![[NSFileManager defaultManager] fileExistsAtPath:pwd]) {
+        NSLog(@"update_repo.sh file needed");
+    }
+    
+    NSString *cmd = [NSString stringWithFormat:@"sh update_repo.sh"];
+    NSLog(@"%@",cmd);
+    system([cmd UTF8String]);
+}
+
+#pragma mark - 不显示执行过程
+
+void findAllHederFile(){
+    NSString *result = runCommand(@"find . -name \"*.h\"");// >> PPUtilities.h
+    NSArray *lines = [result componentsSeparatedByString:@"\n"];
+    NSMutableString *mutStr = [NSMutableString string];
+    for (NSString *line in lines) {
+        NSArray *items = [line componentsSeparatedByString:@"/"];
+        if ([items count]) {
+            NSString *headName = [items lastObject];
+            [mutStr appendFormat:@"#import \"%@\"\n",headName];
+        }
+    }
+    [mutStr writeToFile:[writeDir() stringByAppendingPathComponent:@"PPUtilities.h"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+}
 
 NSString* writeDir(){
     NSString *homeDir;
